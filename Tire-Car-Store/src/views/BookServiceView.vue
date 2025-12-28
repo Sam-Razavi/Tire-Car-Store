@@ -1,4 +1,9 @@
 <script setup>
+/*
+  BookServiceView.vue
+  Booking form for car and tire services.
+  User can select service type, date, time and enter personal information.
+*/
 
 import { ref, computed } from "vue";
 import { useBookingStore } from "../stores/bookingStore";
@@ -11,11 +16,11 @@ const email = ref("");
 const phone = ref("");
 const regNr = ref("");
 
-const serviceType = ref("Oil change"); // default value
-const selectedDate = ref(""); // YYYY-MM-DD from <input type="date">
-const selectedTime = ref(""); // from select dropdown
+const serviceType = ref("Oil change");
+const selectedDate = ref("");
+const selectedTime = ref("");
 
-// Service types required in the assignment 
+// Service types
 const serviceTypes = [
   "Oil change",
   "Brake adjustment",
@@ -23,7 +28,7 @@ const serviceTypes = [
   "Tire change",
 ];
 
-// Simple time slots 
+// Time slots
 const timeSlots = [
   "09:00",
   "10:00",
@@ -35,34 +40,34 @@ const timeSlots = [
   "16:00",
 ];
 
-// Find bookings for the selected date
+// Bookings for selected date
 const bookingsForSelectedDate = computed(() => {
   if (!selectedDate.value) return [];
-  return bookingStore.bookings.filter((b) => b.date === selectedDate.value);
+  return bookingStore.bookings.filter(
+    (b) => b.date === selectedDate.value && b.status !== "cancelled"
+  );
 });
 
-// Occupied times on that date (ignore cancelled so cancelled slots become free)
+// Occupied times
 const occupiedTimes = computed(() => {
-  return bookingsForSelectedDate.value
-    .filter((b) => b.status !== "cancelled")
-    .map((b) => b.time);
+  return bookingsForSelectedDate.value.map((b) => b.time);
 });
 
-// Available times = all slots minus occupied times
+// Available times
 const availableTimes = computed(() => {
   return timeSlots.filter((t) => !occupiedTimes.value.includes(t));
 });
 
-// Simple validation 
+// Basic validation
 function isFormValid() {
   return (
-    name.value.trim() !== "" &&
-    email.value.trim() !== "" &&
-    phone.value.trim() !== "" &&
-    regNr.value.trim() !== "" &&
-    serviceType.value.trim() !== "" &&
-    selectedDate.value.trim() !== "" &&
-    selectedTime.value.trim() !== ""
+    name.value.trim() &&
+    email.value.trim() &&
+    phone.value.trim() &&
+    regNr.value.trim() &&
+    serviceType.value &&
+    selectedDate.value &&
+    selectedTime.value
   );
 }
 
@@ -73,13 +78,12 @@ function submitBooking() {
     return;
   }
 
-  // Prevent double-booking: stop if the selected date+time is taken
+  // Prevent double booking
   if (bookingStore.isSlotTaken(selectedDate.value, selectedTime.value)) {
     alert("That time is already booked. Please choose another time.");
     return;
   }
 
-  // Create a booking object (store will add id/status/performedAction)
   const newBooking = {
     name: name.value.trim(),
     email: email.value.trim(),
@@ -90,10 +94,9 @@ function submitBooking() {
     time: selectedTime.value,
   };
 
-  // Add booking to store 
   bookingStore.addBooking(newBooking);
 
-  // Reset form 
+  // Reset form
   name.value = "";
   email.value = "";
   phone.value = "";
@@ -105,10 +108,11 @@ function submitBooking() {
 </script>
 
 <template>
-  <section>
+  <section class="page">
     <h1>Book Service</h1>
 
-    <form class="form" @submit.prevent="submitBooking">
+    <!-- Booking form -->
+    <form class="card form" @submit.prevent="submitBooking">
       <div class="field">
         <label>Name</label>
         <input v-model="name" type="text" placeholder="Your name" />
@@ -140,7 +144,6 @@ function submitBooking() {
 
       <div class="field">
         <label>Date</label>
-   
         <input v-model="selectedDate" type="date" />
       </div>
 
@@ -148,22 +151,23 @@ function submitBooking() {
         <label>Time</label>
         <select v-model="selectedTime" :disabled="!selectedDate">
           <option value="" disabled>Select a time</option>
-
-          <!-- Only show available times in the dropdown -->
           <option v-for="t in availableTimes" :key="t" :value="t">
             {{ t }}
           </option>
         </select>
 
         <p v-if="selectedDate && availableTimes.length === 0" class="small">
-          No available times for this date. Please choose another date.
+          No available times for this date.
         </p>
       </div>
 
-      <button class="btn" type="submit">Book service</button>
+      <div class="btnRow">
+        <button class="btn" type="submit">Book service</button>
+      </div>
     </form>
 
-    <div v-if="selectedDate" class="timesBox">
+    <!-- Time overview -->
+    <div v-if="selectedDate" class="card timesBox">
       <h2>Times for {{ selectedDate }}</h2>
 
       <div class="timesGrid">
@@ -179,7 +183,9 @@ function submitBooking() {
           <ul>
             <li v-for="t in occupiedTimes" :key="'o-' + t">{{ t }}</li>
           </ul>
-          <p v-if="occupiedTimes.length === 0" class="small">No occupied times.</p>
+          <p v-if="occupiedTimes.length === 0" class="small">
+            No occupied times.
+          </p>
         </div>
       </div>
     </div>
@@ -187,12 +193,16 @@ function submitBooking() {
 </template>
 
 <style scoped>
+.page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
 
 .form {
   max-width: 520px;
-  border: 1px solid #ddd;
-  padding: 12px;
-  border-radius: 6px;
+  width: 100%;
+  margin-top: 12px;
 }
 
 .field {
@@ -206,31 +216,21 @@ label {
   margin-bottom: 4px;
 }
 
-input,
-select {
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-}
-
-.btn {
-  padding: 10px 12px;
-  border: 1px solid #333;
-  background: #fff;
-  cursor: pointer;
-}
-
 .small {
   font-size: 13px;
   margin-top: 6px;
 }
 
+.btnRow {
+  display: flex;
+  justify-content: center;
+  margin-top: 12px;
+}
+
 .timesBox {
-  margin-top: 16px;
+  margin-top: 20px;
   max-width: 700px;
-  border: 1px solid #ddd;
-  padding: 12px;
-  border-radius: 6px;
+  width: 100%;
 }
 
 .timesGrid {

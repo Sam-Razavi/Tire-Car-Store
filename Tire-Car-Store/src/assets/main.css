@@ -1,9 +1,55 @@
-/*  global styles */
+:root {
+  --border: #dedede;
+  --text: #222;
+  --muted: #666;
+  --bg: #fafafa;
+  --card: #ffffff;
+}
+
 body {
   margin: 0;
   font-family: Arial, sans-serif;
+  color: var(--text);
+  background: var(--bg);
 }
 
-h1 {
-  margin-top: 0;
+h1, h2, h3 {
+  margin: 0 0 10px 0;
+}
+
+p {
+  margin: 6px 0;
+  color: var(--muted);
+}
+
+.container {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.btn {
+  padding: 10px 12px;
+  border: 1px solid #333;
+  background: #fff;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+input, select {
+  padding: 8px;
+  border: 1px solid #cfcfcf;
+  border-radius: 6px;
 }

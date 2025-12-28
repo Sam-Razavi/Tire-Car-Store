@@ -1,4 +1,10 @@
 <script setup>
+/*
+  MyBookingsView.vue
+  Requirement: user must be able to see a list of bookings,
+  search for a customer (regNr or email), filter by date,
+  edit/cancel bookings, and mark booking as completed + save performed action.
+*/
 
 import { ref, computed } from "vue";
 import { useBookingStore } from "../stores/bookingStore";
@@ -58,7 +64,7 @@ const filteredBookings = computed(() => {
     list = list.filter((b) => b.date === filterDate.value);
   }
 
-  // Search filter (email or regNr)
+  // Search filter (email or regNr or id)
   const q = searchText.value.trim().toLowerCase();
   if (q) {
     list = list.filter((b) => {
@@ -72,7 +78,7 @@ const filteredBookings = computed(() => {
   return list;
 });
 
-// Simple groups (upcoming, ongoing, completed)
+// Groups (upcoming, ongoing, completed, cancelled)
 const upcomingBookings = computed(() =>
   filteredBookings.value.filter((b) => b.status === "upcoming")
 );
@@ -83,6 +89,10 @@ const ongoingBookings = computed(() =>
 
 const completedBookings = computed(() =>
   filteredBookings.value.filter((b) => b.status === "completed")
+);
+
+const cancelledBookings = computed(() =>
+  filteredBookings.value.filter((b) => b.status === "cancelled")
 );
 
 // Get selected booking details
@@ -96,7 +106,7 @@ function openDetails(id) {
   isEditing.value = false;
 }
 
-// Start editing
+// Start editing: copy selected booking into editBooking
 function startEdit() {
   if (!selectedBooking.value) return;
 
@@ -125,8 +135,14 @@ function saveEdit() {
     return;
   }
 
-   // Prevent booking overlaps when editing (ignore current booking id)
-  if (bookingStore.isSlotTaken(editBooking.value.date, editBooking.value.time, editBooking.value.id)) {
+  // Prevent booking overlaps when editing (ignore current booking id)
+  if (
+    bookingStore.isSlotTaken(
+      editBooking.value.date,
+      editBooking.value.time,
+      editBooking.value.id
+    )
+  ) {
     alert("That time is already booked. Please choose another time.");
     return;
   }
@@ -170,7 +186,7 @@ function completeBooking(id) {
   isEditing.value = false;
 }
 
-// Mark ongoing 
+// Mark ongoing (optional but helps show “ongoing”)
 function markOngoing(id) {
   const booking = bookingStore.bookings.find((b) => b.id === id);
   if (!booking) return;
@@ -195,10 +211,14 @@ function clearFilters() {
     <h1>My Bookings</h1>
 
     <!-- Filters -->
-    <div class="filters">
+    <div class="filters card">
       <div class="filterField">
         <label>Search (email, regNr or booking id)</label>
-        <input v-model="searchText" type="text" placeholder="example: ABC123 or name@mail.com" />
+        <input
+          v-model="searchText"
+          type="text"
+          placeholder="example: ABC123 or name@mail.com"
+        />
       </div>
 
       <div class="filterField">
@@ -211,37 +231,53 @@ function clearFilters() {
 
     <!-- Booking lists -->
     <div class="lists">
-      <div class="listBox">
+      <div class="listBox card">
         <h2>Upcoming</h2>
         <p v-if="upcomingBookings.length === 0" class="small">No upcoming bookings.</p>
         <ul v-else>
           <li v-for="b in upcomingBookings" :key="b.id">
             <button class="linkBtn" @click="openDetails(b.id)">
               {{ b.id }} - {{ b.date }} {{ b.time }} - {{ b.regNr }} - {{ b.serviceType }}
+              <span class="badge" :class="b.status">{{ b.status }}</span>
             </button>
           </li>
         </ul>
       </div>
 
-      <div class="listBox">
+      <div class="listBox card">
         <h2>Ongoing</h2>
         <p v-if="ongoingBookings.length === 0" class="small">No ongoing bookings.</p>
         <ul v-else>
           <li v-for="b in ongoingBookings" :key="b.id">
             <button class="linkBtn" @click="openDetails(b.id)">
               {{ b.id }} - {{ b.date }} {{ b.time }} - {{ b.regNr }} - {{ b.serviceType }}
+              <span class="badge" :class="b.status">{{ b.status }}</span>
             </button>
           </li>
         </ul>
       </div>
 
-      <div class="listBox">
+      <div class="listBox card">
         <h2>Completed (History)</h2>
         <p v-if="completedBookings.length === 0" class="small">No completed bookings.</p>
         <ul v-else>
           <li v-for="b in completedBookings" :key="b.id">
             <button class="linkBtn" @click="openDetails(b.id)">
               {{ b.id }} - {{ b.date }} {{ b.time }} - {{ b.regNr }} - {{ b.serviceType }}
+              <span class="badge" :class="b.status">{{ b.status }}</span>
+            </button>
+          </li>
+        </ul>
+      </div>
+
+      <div class="listBox card">
+        <h2>Cancelled</h2>
+        <p v-if="cancelledBookings.length === 0" class="small">No cancelled bookings.</p>
+        <ul v-else>
+          <li v-for="b in cancelledBookings" :key="b.id">
+            <button class="linkBtn" @click="openDetails(b.id)">
+              {{ b.id }} - {{ b.date }} {{ b.time }} - {{ b.regNr }} - {{ b.serviceType }}
+              <span class="badge" :class="b.status">{{ b.status }}</span>
             </button>
           </li>
         </ul>
@@ -249,7 +285,7 @@ function clearFilters() {
     </div>
 
     <!-- Details panel -->
-    <div v-if="selectedBooking" class="details">
+    <div v-if="selectedBooking" class="details card">
       <h2>Booking Details</h2>
 
       <!-- View mode -->
@@ -261,7 +297,11 @@ function clearFilters() {
         <p><strong>RegNr:</strong> {{ selectedBooking.regNr }}</p>
         <p><strong>Service:</strong> {{ selectedBooking.serviceType }}</p>
         <p><strong>Date/Time:</strong> {{ selectedBooking.date }} {{ selectedBooking.time }}</p>
-        <p><strong>Status:</strong> {{ selectedBooking.status }}</p>
+        <p>
+          <strong>Status:</strong>
+          {{ selectedBooking.status }}
+          <span class="badge" :class="selectedBooking.status">{{ selectedBooking.status }}</span>
+        </p>
 
         <p v-if="selectedBooking.status === 'completed'">
           <strong>Performed action:</strong> {{ selectedBooking.performedAction }}
@@ -349,12 +389,9 @@ function clearFilters() {
 </template>
 
 <style scoped>
+/* Uses global .card and .btn from main.css */
 
 .filters {
-  max-width: 900px;
-  border: 1px solid #ddd;
-  padding: 12px;
-  border-radius: 6px;
   display: grid;
   grid-template-columns: 1fr 240px 120px;
   gap: 12px;
@@ -371,20 +408,6 @@ label {
   margin-bottom: 4px;
 }
 
-input,
-select {
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-}
-
-.btn {
-  padding: 10px 12px;
-  border: 1px solid #333;
-  background: #fff;
-  cursor: pointer;
-}
-
 .small {
   font-size: 13px;
 }
@@ -392,20 +415,18 @@ select {
 .lists {
   margin-top: 16px;
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 12px;
 }
 
 .listBox {
-  border: 1px solid #ddd;
-  border-radius: 6px;
   padding: 12px;
 }
 
 .linkBtn {
   border: none;
   background: transparent;
-  padding: 0;
+  padding: 4px 0;
   text-decoration: underline;
   cursor: pointer;
   text-align: left;
@@ -414,10 +435,7 @@ select {
 
 .details {
   margin-top: 16px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  padding: 12px;
-  max-width: 900px;
+  max-width: 980px;
 }
 
 .actions {
@@ -437,5 +455,31 @@ select {
 .field {
   display: flex;
   flex-direction: column;
+}
+
+/* Status badges */
+.badge {
+  display: inline-block;
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid #ccc;
+  margin-left: 6px;
+}
+
+.badge.upcoming {
+  background: #fff;
+}
+
+.badge.ongoing {
+  background: #f7f7f7;
+}
+
+.badge.completed {
+  background: #efefef;
+}
+
+.badge.cancelled {
+  background: #ffecec;
 }
 </style>
