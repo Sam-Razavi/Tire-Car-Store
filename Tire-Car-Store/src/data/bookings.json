@@ -1,0 +1,38 @@
+[
+  {
+    "id": "B001",
+    "name": "Ali Svensson",
+    "email": "ali@example.com",
+    "phone": "0701234567",
+    "regNr": "ABC123",
+    "serviceType": "Tire change",
+    "date": "2025-11-20",
+    "time": "10:00",
+    "status": "upcoming",
+    "performedAction": ""
+  },
+  {
+    "id": "B002",
+    "name": "Mina Maddahi",
+    "email": "mina@example.com",
+    "phone": "0707654321",
+    "regNr": "XYZ987",
+    "serviceType": "Oil change",
+    "date": "2025-11-20",
+    "time": "13:00",
+    "status": "ongoing",
+    "performedAction": ""
+  },
+  {
+    "id": "B003",
+    "name": "Sam Razavi",
+    "email": "sam@example.com",
+    "phone": "0700001111",
+    "regNr": "KLM456",
+    "serviceType": "Full service",
+    "date": "2025-11-18",
+    "time": "09:00",
+    "status": "completed",
+    "performedAction": "Full service done + checked brakes"
+  }
+]

@@ -1,7 +1,16 @@
+// src/main.js
 import { createApp } from "vue";
 import App from "./App.vue";
 import router from "./router";
 
-import "./assets/main.css"; // global styles
+// Pinia (state management)
+import { createPinia } from "pinia";
 
-createApp(App).use(router).mount("#app");
+import "./assets/main.css";
+
+const app = createApp(App);
+
+app.use(createPinia()); // enable pinia
+app.use(router);
+
+app.mount("#app");

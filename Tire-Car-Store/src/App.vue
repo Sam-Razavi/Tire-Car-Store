@@ -1,3 +1,16 @@
+<script setup>
+// Load bookings when the app starts
+import { onMounted } from "vue";
+import { useBookingStore } from "./stores/bookingStore";
+
+const bookingStore = useBookingStore();
+
+onMounted(() => {
+  bookingStore.loadBookings();
+});
+</script>
+
+
 <template>
   <div class="app">
     <header class="header">
