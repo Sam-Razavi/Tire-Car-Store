@@ -1,19 +1,21 @@
 import { defineStore } from "pinia";
 
-// Load default bookings from a JSON file.
+// Importerar startbokningar från en JSON-fil
+// Detta används för att ha data direkt när appen laddas
 import initialBookings from "../data/bookings.json";
 
 export const useBookingStore = defineStore("bookingStore", {
   state: () => ({
-    // All bookings are stored here while the app runs
+    // Alla bokningar lagras här medan appen körs
     bookings: [],
 
-    // Simple message we can show/alert
+    // Ett enkelt meddelande som kan visas (t.ex. alert)
     message: "",
   }),
 
   getters: {
-    // Return bookings sorted by date+time (simple sorting)
+    // Returnerar bokningar sorterade efter datum och tid
+    // Jag gör en kopia så att original-listan inte ändras
     sortedBookings(state) {
       return [...state.bookings].sort((a, b) => {
         const aDT = `${a.date} ${a.time}`;
@@ -22,13 +24,18 @@ export const useBookingStore = defineStore("bookingStore", {
       });
     },
 
-    // Check if a date+time slot is already taken (ignore cancelled bookings)
-    // ignoreId is used when editing (so the booking doesn't conflict with itself)
+    // Kollar om en viss datum + tid redan är bokad
+    // Avbokade tider räknas inte
+    // ignoreId används när man redigerar en bokning
     isSlotTaken: (state) => {
       return (date, time, ignoreId = null) => {
         return state.bookings.some((b) => {
+          // Ignorera bokningen man själv redigerar
           if (ignoreId && b.id === ignoreId) return false;
+
+          // Avbokade bokningar ska inte blockera tider
           if (b.status === "cancelled") return false;
+
           return b.date === date && b.time === time;
         });
       };
@@ -36,19 +43,19 @@ export const useBookingStore = defineStore("bookingStore", {
   },
 
   actions: {
-    // Load bookings from JSON when the app starts
+    // Laddar bokningar från JSON-filen när appen startar
     loadBookings() {
-      // Copy so we don't directly mutate the imported JSON object
+      // Kopierar objekten så vi inte ändrar direkt i JSON-importen
       this.bookings = initialBookings.map((b) => ({ ...b }));
     },
 
-    // Generate a simple booking id 
+    // Skapar ett enkelt boknings-id (t.ex. B001, B002)
     generateId() {
       const number = this.bookings.length + 1;
       return "B" + String(number).padStart(3, "0");
     },
 
-    // Add new booking
+    // Lägger till en ny bokning
     addBooking(newBooking) {
       const bookingToAdd = {
         ...newBooking,
@@ -59,12 +66,12 @@ export const useBookingStore = defineStore("bookingStore", {
 
       this.bookings.push(bookingToAdd);
 
-      // Simulate saving to JSON 
+      // Simulerar att bokningen sparas
       this.message = "Booking saved (simulated).";
       alert(this.message);
     },
 
-    // Update booking by id
+    // Uppdaterar en bokning baserat på id
     updateBooking(updatedBooking) {
       const index = this.bookings.findIndex((b) => b.id === updatedBooking.id);
       if (index !== -1) {
@@ -75,7 +82,7 @@ export const useBookingStore = defineStore("bookingStore", {
       }
     },
 
-    // Cancel booking (we keep it but mark it as cancelled)
+    // Avbokar en bokning (vi tar inte bort den, bara ändrar status)
     cancelBooking(id) {
       const booking = this.bookings.find((b) => b.id === id);
       if (booking) {
@@ -85,7 +92,7 @@ export const useBookingStore = defineStore("bookingStore", {
       }
     },
 
-    // Mark booking completed and save performed action (history)
+    // Markerar bokning som klar och sparar vad som gjordes
     completeBooking(id, performedAction) {
       const booking = this.bookings.find((b) => b.id === id);
       if (booking) {

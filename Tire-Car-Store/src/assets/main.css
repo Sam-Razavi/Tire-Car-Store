@@ -1,3 +1,4 @@
+/* Globala CSS-variabler som används i hela appen */
 :root {
   --border: #dedede;
   --text: #222;
@@ -6,28 +7,33 @@
   --card: #ffffff;
 }
 
+/* Grundinställningar för hela sidan */
 body {
-  margin: 0;
+  margin: 0; /* tar bort default-marginal */
   font-family: Arial, sans-serif;
   color: var(--text);
   background: var(--bg);
 }
 
+/* Rubriker ska ha lite luft under sig */
 h1, h2, h3 {
   margin: 0 0 10px 0;
 }
 
+/* Standard-text (paragrafer) */
 p {
   margin: 6px 0;
-  color: var(--muted);
+  color: var(--muted); /* lite ljusare textfärg */
 }
 
+/* Wrapper som centrerar innehållet */
 .container {
   max-width: 980px;
-  margin: 0 auto;
+  margin: 0 auto; /* centrerar innehållet */
   padding: 16px;
 }
 
+/* Kort-styling som används på många ställen */
 .card {
   background: var(--card);
   border: 1px solid var(--border);
@@ -35,6 +41,7 @@ p {
   padding: 12px;
 }
 
+/* Standard-knapp */
 .btn {
   padding: 10px 12px;
   border: 1px solid #333;
@@ -43,11 +50,13 @@ p {
   border-radius: 6px;
 }
 
+/* När knappen är disabled */
 .btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
+/* Inputs och dropdowns */
 input, select {
   padding: 8px;
   border: 1px solid #cfcfcf;

@@ -1,7 +1,12 @@
 <template>
+  <!-- Startsidan för appen -->
   <section class="home">
+    <!-- Hero-sektion med bild och text -->
     <div class="hero">
+      <!-- Bild som visar bilservice -->
       <img src="../assets/hero.png" alt="Car service workshop" />
+
+      <!-- Text som visas ovanpå bilden -->
       <div class="heroText">
         <h1>Tire & Car Service</h1>
         <p>
@@ -11,8 +16,11 @@
       </div>
     </div>
 
+    <!-- Kort introduktion om tjänsterna -->
     <div class="intro card">
       <h2>Our Services</h2>
+
+      <!-- Lista med olika typer av service -->
       <ul>
         <li>Oil change</li>
         <li>Brake adjustment</li>
@@ -20,6 +28,7 @@
         <li>Tire change</li>
       </ul>
 
+      <!-- Kort instruktion till användaren -->
       <p>
         Use the menu above to book a service or manage your bookings.
       </p>
@@ -28,12 +37,14 @@
 </template>
 
 <style scoped>
+/* Grundlayout för startsidan */
 .home {
   display: flex;
   flex-direction: column;
   gap: 20px;
 }
 
+/* Hero-sektionen */
 .hero {
   position: relative;
   border-radius: 10px;
@@ -41,12 +52,14 @@
   max-height: 360px;
 }
 
+/* Bilden i hero */
 .hero img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
+/* Texten som ligger ovanpå bilden */
 .heroText {
   position: absolute;
   bottom: 20px;
@@ -66,6 +79,7 @@
   font-size: 14px;
 }
 
+/* Styling för listan i intro-delen */
 .intro ul {
   padding-left: 18px;
 }

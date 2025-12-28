@@ -1,27 +1,29 @@
 <script setup>
 /*
   MyBookingsView.vue
-  Requirement: user must be able to see a list of bookings,
-  search for a customer (regNr or email), filter by date,
-  edit/cancel bookings, and mark booking as completed + save performed action.
+  Den här sidan är för att se och hantera bokningar.
+  Krav: man ska kunna se listor, söka (regNr/email/id), filtrera på datum,
+  ändra/avboka bokningar och markera som klar + spara vad som gjordes.
 */
 
 import { ref, computed } from "vue";
 import { useBookingStore } from "../stores/bookingStore";
 
+// Hämtar store där alla bokningar ligger
 const bookingStore = useBookingStore();
 
-// Search input (can be regNr OR email)
+// Text som användaren skriver i sökfältet (regNr eller email eller id)
 const searchText = ref("");
 
-// Filter by date 
+// Datumfilter (om man vill se bara en viss dag)
 const filterDate = ref("");
 
-// For showing details + editing
+// För detaljer: vilken bokning som är vald + om vi är i edit-läge
 const selectedBookingId = ref(null);
 const isEditing = ref(false);
 
-// Editable copy of booking 
+// En kopia av bokningen som jag redigerar i formuläret
+// (så man inte ändrar direkt i listan innan man klickar Save)
 const editBooking = ref({
   id: "",
   name: "",
@@ -35,7 +37,7 @@ const editBooking = ref({
   performedAction: "",
 });
 
-// Service types (same as book page)
+// Samma service-typer som på bokningssidan
 const serviceTypes = [
   "Oil change",
   "Brake adjustment",
@@ -43,7 +45,7 @@ const serviceTypes = [
   "Tire change",
 ];
 
-// Time slots (same as book page)
+// Samma tider som på bokningssidan
 const timeSlots = [
   "09:00",
   "10:00",
@@ -55,16 +57,17 @@ const timeSlots = [
   "16:00",
 ];
 
-// Filtered bookings (search + date filter)
+// Filtrerad lista (först datumfilter, sen sök)
 const filteredBookings = computed(() => {
+  // Jag utgår från sortedBookings så att listan redan är sorterad
   let list = bookingStore.sortedBookings;
 
-  // Date filter
+  // Filtrera på datum om datum är valt
   if (filterDate.value) {
     list = list.filter((b) => b.date === filterDate.value);
   }
 
-  // Search filter (email or regNr or id)
+  // Sökfilter (kan vara email, regNr eller id)
   const q = searchText.value.trim().toLowerCase();
   if (q) {
     list = list.filter((b) => {
@@ -78,7 +81,7 @@ const filteredBookings = computed(() => {
   return list;
 });
 
-// Groups (upcoming, ongoing, completed, cancelled)
+// Jag delar upp bokningar i olika listor beroende på status
 const upcomingBookings = computed(() =>
   filteredBookings.value.filter((b) => b.status === "upcoming")
 );
@@ -95,18 +98,19 @@ const cancelledBookings = computed(() =>
   filteredBookings.value.filter((b) => b.status === "cancelled")
 );
 
-// Get selected booking details
+// Hämtar detaljerna för vald bokning (från store)
 const selectedBooking = computed(() => {
   if (!selectedBookingId.value) return null;
   return bookingStore.bookings.find((b) => b.id === selectedBookingId.value) || null;
 });
 
+// Öppnar detaljpanelen för en bokning
 function openDetails(id) {
   selectedBookingId.value = id;
-  isEditing.value = false;
+  isEditing.value = false; // alltid börja i view-läge
 }
 
-// Start editing: copy selected booking into editBooking
+// Starta edit: kopierar vald bokning till editBooking
 function startEdit() {
   if (!selectedBooking.value) return;
 
@@ -114,14 +118,14 @@ function startEdit() {
   editBooking.value = { ...selectedBooking.value };
 }
 
-// Cancel editing
+// Avbryter edit-läge (ingen ändring sparas)
 function cancelEdit() {
   isEditing.value = false;
 }
 
-// Save edit (update store)
+// Sparar ändringarna i store
 function saveEdit() {
-  // Basic validation 
+  // Enkel koll att allt är ifyllt
   if (
     !editBooking.value.name ||
     !editBooking.value.email ||
@@ -135,7 +139,8 @@ function saveEdit() {
     return;
   }
 
-  // Prevent booking overlaps when editing (ignore current booking id)
+  // Kollar så man inte bokar samma tid som någon annan
+  // (men ignorera den bokningen vi redan redigerar)
   if (
     bookingStore.isSlotTaken(
       editBooking.value.date,
@@ -147,46 +152,48 @@ function saveEdit() {
     return;
   }
 
-  // Update booking
+  // Uppdaterar bokningen i store
   bookingStore.updateBooking({
     ...editBooking.value,
-    regNr: editBooking.value.regNr.toUpperCase(),
+    regNr: editBooking.value.regNr.toUpperCase(), // regnr i versaler för att vara konsekvent
   });
 
   isEditing.value = false;
 }
 
-// Cancel booking
+// Avbokar en bokning
 function cancelBooking(id) {
+  // Jag frågar användaren först för säkerhets skull
   const ok = confirm("Are you sure you want to cancel this booking?");
   if (!ok) return;
 
   bookingStore.cancelBooking(id);
 
-  // Close details if we cancelled the selected one
+  // Om man avbokar den som man tittar på, stäng detaljrutan
   if (selectedBookingId.value === id) {
     selectedBookingId.value = null;
     isEditing.value = false;
   }
 }
 
-// Mark completed
+// Markerar en bokning som completed (och sparar vad som gjordes)
 function completeBooking(id) {
+  // Prompt används här för att snabbt skriva vad som gjordes
   const performedAction = prompt(
     "What was done? (Write a short text for history)",
     "Service completed"
   );
 
-  // If user pressed cancel in prompt, don't do anything
+  // Om man klickar Cancel i prompten så gör vi inget
   if (performedAction === null) return;
 
   bookingStore.completeBooking(id, performedAction);
 
-  // Refresh detail view
+  // Gå tillbaka till view-läge efter ändring
   isEditing.value = false;
 }
 
-// Mark ongoing (optional but helps show “ongoing”)
+// Markerar som ongoing (extra funktion för att visa “ongoing” i listorna)
 function markOngoing(id) {
   const booking = bookingStore.bookings.find((b) => b.id === id);
   if (!booking) return;
@@ -199,7 +206,7 @@ function markOngoing(id) {
   isEditing.value = false;
 }
 
-// Clear filters
+// Rensar sök och datumfilter
 function clearFilters() {
   searchText.value = "";
   filterDate.value = "";
@@ -210,7 +217,7 @@ function clearFilters() {
   <section>
     <h1>My Bookings</h1>
 
-    <!-- Filters -->
+    <!-- Filter-rutan: sök + datum -->
     <div class="filters card">
       <div class="filterField">
         <label>Search (email, regNr or booking id)</label>
@@ -226,16 +233,18 @@ function clearFilters() {
         <input v-model="filterDate" type="date" />
       </div>
 
+      <!-- Knapp för att nollställa filter -->
       <button class="btn" type="button" @click="clearFilters">Clear</button>
     </div>
 
-    <!-- Booking lists -->
+    <!-- Här visas listor med bokningar, uppdelat på status -->
     <div class="lists">
       <div class="listBox card">
         <h2>Upcoming</h2>
         <p v-if="upcomingBookings.length === 0" class="small">No upcoming bookings.</p>
         <ul v-else>
           <li v-for="b in upcomingBookings" :key="b.id">
+            <!-- Klickbar rad så man kan öppna detaljer -->
             <button class="linkBtn" @click="openDetails(b.id)">
               {{ b.id }} - {{ b.date }} {{ b.time }} - {{ b.regNr }} - {{ b.serviceType }}
               <span class="badge" :class="b.status">{{ b.status }}</span>
@@ -284,11 +293,11 @@ function clearFilters() {
       </div>
     </div>
 
-    <!-- Details panel -->
+    <!-- Detaljpanelen kommer bara fram när man valt en bokning -->
     <div v-if="selectedBooking" class="details card">
       <h2>Booking Details</h2>
 
-      <!-- View mode -->
+      <!-- View-läge (bara visa info) -->
       <div v-if="!isEditing">
         <p><strong>ID:</strong> {{ selectedBooking.id }}</p>
         <p><strong>Name:</strong> {{ selectedBooking.name }}</p>
@@ -303,10 +312,12 @@ function clearFilters() {
           <span class="badge" :class="selectedBooking.status">{{ selectedBooking.status }}</span>
         </p>
 
+        <!-- Extra info om bokningen är klar -->
         <p v-if="selectedBooking.status === 'completed'">
           <strong>Performed action:</strong> {{ selectedBooking.performedAction }}
         </p>
 
+        <!-- Knappar för att hantera bokningen -->
         <div class="actions">
           <button class="btn" @click="startEdit" :disabled="selectedBooking.status === 'completed'">
             Edit
@@ -334,7 +345,7 @@ function clearFilters() {
         </div>
       </div>
 
-      <!-- Edit mode -->
+      <!-- Edit-läge (här kan man ändra bokningen) -->
       <div v-else>
         <p class="small">(Editing booking {{ editBooking.id }})</p>
 
@@ -378,6 +389,7 @@ function clearFilters() {
             </select>
           </div>
 
+          <!-- Knappar för att spara eller avbryta -->
           <div class="actions">
             <button class="btn" @click="saveEdit">Save</button>
             <button class="btn" @click="cancelEdit">Cancel</button>
@@ -389,7 +401,7 @@ function clearFilters() {
 </template>
 
 <style scoped>
-/* Uses global .card and .btn from main.css */
+/* Använder global .card och .btn från main.css */
 
 .filters {
   display: grid;
@@ -412,6 +424,7 @@ label {
   font-size: 13px;
 }
 
+/* Rutnät med listorna */
 .lists {
   margin-top: 16px;
   display: grid;
@@ -423,6 +436,7 @@ label {
   padding: 12px;
 }
 
+/* En knapp som ser ut som en länk (för att öppna detaljer) */
 .linkBtn {
   border: none;
   background: transparent;
@@ -438,6 +452,7 @@ label {
   max-width: 980px;
 }
 
+/* Knapprad i detaljpanelen */
 .actions {
   margin-top: 12px;
   display: flex;
@@ -445,6 +460,7 @@ label {
   flex-wrap: wrap;
 }
 
+/* Edit-formen i två kolumner */
 .form {
   margin-top: 8px;
   display: grid;
@@ -457,7 +473,7 @@ label {
   flex-direction: column;
 }
 
-/* Status badges */
+/* Små badges för status */
 .badge {
   display: inline-block;
   font-size: 12px;

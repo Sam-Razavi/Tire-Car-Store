@@ -1,26 +1,29 @@
 <script setup>
 /*
   BookServiceView.vue
-  Booking form for car and tire services.
-  User can select service type, date, time and enter personal information.
+  Här finns bokningsformuläret för bil- och däckservice.
+  Användaren kan välja typ av service, datum, tid och fylla i sina uppgifter.
 */
 
 import { ref, computed } from "vue";
 import { useBookingStore } from "../stores/bookingStore";
 
+// Hämtar Pinia-store där bokningar sparas och hämtas
 const bookingStore = useBookingStore();
 
-// ---- Form fields ----
+// ---- Fält i formuläret ----
+// Jag använder ref() för att kunna koppla inputs med v-model
 const name = ref("");
 const email = ref("");
 const phone = ref("");
 const regNr = ref("");
 
+// Standardval i formuläret
 const serviceType = ref("Oil change");
 const selectedDate = ref("");
 const selectedTime = ref("");
 
-// Service types
+// Olika typer av service som användaren kan välja
 const serviceTypes = [
   "Oil change",
   "Brake adjustment",
@@ -28,7 +31,7 @@ const serviceTypes = [
   "Tire change",
 ];
 
-// Time slots
+// Tider som går att boka (en lista med fasta tider)
 const timeSlots = [
   "09:00",
   "10:00",
@@ -40,25 +43,26 @@ const timeSlots = [
   "16:00",
 ];
 
-// Bookings for selected date
+// Bokningar för valt datum
+// computed används så att listan uppdateras automatiskt när selectedDate ändras
 const bookingsForSelectedDate = computed(() => {
   if (!selectedDate.value) return [];
   return bookingStore.bookings.filter(
-    (b) => b.date === selectedDate.value && b.status !== "cancelled"
+    (b) => b.date === selectedDate.value && b.status !== "cancelled" // jag visar inte avbokade tider
   );
 });
 
-// Occupied times
+// Tider som redan är upptagna för valt datum
 const occupiedTimes = computed(() => {
   return bookingsForSelectedDate.value.map((b) => b.time);
 });
 
-// Available times
+// Tider som är lediga (tar bort de tider som redan är bokade)
 const availableTimes = computed(() => {
   return timeSlots.filter((t) => !occupiedTimes.value.includes(t));
 });
 
-// Basic validation
+// Enkel validering så att allt måste vara ifyllt
 function isFormValid() {
   return (
     name.value.trim() &&
@@ -71,32 +75,35 @@ function isFormValid() {
   );
 }
 
-// Submit booking
+// Skickar in bokningen
 function submitBooking() {
+  // Om något saknas så stoppar jag och visar en alert
   if (!isFormValid()) {
     alert("Please fill in all fields.");
     return;
   }
 
-  // Prevent double booking
+  // Kollar så man inte kan dubbelboka samma tid
   if (bookingStore.isSlotTaken(selectedDate.value, selectedTime.value)) {
     alert("That time is already booked. Please choose another time.");
     return;
   }
 
+  // Bygger upp ett bokningsobjekt med användarens data
   const newBooking = {
     name: name.value.trim(),
     email: email.value.trim(),
     phone: phone.value.trim(),
-    regNr: regNr.value.trim().toUpperCase(),
+    regNr: regNr.value.trim().toUpperCase(), // regnr blir versaler för att se snyggt ut
     serviceType: serviceType.value,
     date: selectedDate.value,
     time: selectedTime.value,
   };
 
+  // Lägger till bokningen i store (och sparar den där)
   bookingStore.addBooking(newBooking);
 
-  // Reset form
+  // Nollställer formuläret efter bokning
   name.value = "";
   email.value = "";
   phone.value = "";
@@ -111,10 +118,11 @@ function submitBooking() {
   <section class="page">
     <h1>Book Service</h1>
 
-    <!-- Booking form -->
+    <!-- Formulär för bokning -->
     <form class="card form" @submit.prevent="submitBooking">
       <div class="field">
         <label>Name</label>
+        <!-- v-model kopplar input till ref:en "name" -->
         <input v-model="name" type="text" placeholder="Your name" />
       </div>
 
@@ -135,6 +143,7 @@ function submitBooking() {
 
       <div class="field">
         <label>Service type</label>
+        <!-- Dropdown för att välja service -->
         <select v-model="serviceType">
           <option v-for="s in serviceTypes" :key="s" :value="s">
             {{ s }}
@@ -144,11 +153,14 @@ function submitBooking() {
 
       <div class="field">
         <label>Date</label>
+        <!-- Datumval -->
         <input v-model="selectedDate" type="date" />
       </div>
 
       <div class="field">
         <label>Time</label>
+
+        <!-- Tidval är disabled tills man har valt ett datum -->
         <select v-model="selectedTime" :disabled="!selectedDate">
           <option value="" disabled>Select a time</option>
           <option v-for="t in availableTimes" :key="t" :value="t">
@@ -156,6 +168,7 @@ function submitBooking() {
           </option>
         </select>
 
+        <!-- Visas om det inte finns några tider kvar -->
         <p v-if="selectedDate && availableTimes.length === 0" class="small">
           No available times for this date.
         </p>
@@ -166,7 +179,7 @@ function submitBooking() {
       </div>
     </form>
 
-    <!-- Time overview -->
+    <!-- Extra info: visar lediga och upptagna tider för valt datum -->
     <div v-if="selectedDate" class="card timesBox">
       <h2>Times for {{ selectedDate }}</h2>
 
@@ -183,6 +196,8 @@ function submitBooking() {
           <ul>
             <li v-for="t in occupiedTimes" :key="'o-' + t">{{ t }}</li>
           </ul>
+
+          <!-- Om inget är bokat än -->
           <p v-if="occupiedTimes.length === 0" class="small">
             No occupied times.
           </p>
@@ -193,18 +208,21 @@ function submitBooking() {
 </template>
 
 <style scoped>
+/* Jag centrerar innehållet på sidan */
 .page {
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
+/* Formens storlek */
 .form {
   max-width: 520px;
   width: 100%;
   margin-top: 12px;
 }
 
+/* Varje fält i formuläret */
 .field {
   display: flex;
   flex-direction: column;
@@ -216,23 +234,27 @@ label {
   margin-bottom: 4px;
 }
 
+/* Lite mindre text för info-meddelanden */
 .small {
   font-size: 13px;
   margin-top: 6px;
 }
 
+/* Rad för knappen */
 .btnRow {
   display: flex;
   justify-content: center;
   margin-top: 12px;
 }
 
+/* Boxen med tider under formuläret */
 .timesBox {
   margin-top: 20px;
   max-width: 700px;
   width: 100%;
 }
 
+/* Två kolumner: lediga vs upptagna tider */
 .timesGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
