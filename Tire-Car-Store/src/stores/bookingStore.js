@@ -43,10 +43,41 @@ export const useBookingStore = defineStore("bookingStore", {
   },
 
   actions: {
+    // Returnerar en kort beskrivning (på engelska) baserat på serviceType
+    // Detta används för att visa "what will happen" i bokningsdetaljerna
+    getServiceDescription(serviceType) {
+      // En enkel "student" lösning med if-satser
+      if (serviceType === "Oil change") {
+        return "Oil and filter replacement, including basic fluid checks.";
+      }
+      if (serviceType === "Brake adjustment") {
+        return "Brake inspection and adjustment, including safety check.";
+      }
+      if (serviceType === "Full service") {
+        return "Full vehicle service including inspection and basic maintenance checks.";
+      }
+      if (serviceType === "Tire change") {
+        return "Tire change including pressure check and visual inspection.";
+      }
+
+      // Om något oväntat värde kommer in
+      return "Service will be performed according to the selected booking type.";
+    },
+
     // Laddar bokningar från JSON-filen när appen startar
     loadBookings() {
       // Kopierar objekten så vi inte ändrar direkt i JSON-importen
-      this.bookings = initialBookings.map((b) => ({ ...b }));
+      // Här ser jag även till att alla bokningar har en description (om JSON saknar det)
+      this.bookings = initialBookings.map((b) => {
+        return {
+          ...b,
+          // Om description saknas i JSON, sätt en baserat på serviceType
+          description:
+            b.description && b.description.trim() !== ""
+              ? b.description
+              : this.getServiceDescription(b.serviceType),
+        };
+      });
     },
 
     // Skapar ett enkelt boknings-id (t.ex. B001, B002)
@@ -62,6 +93,9 @@ export const useBookingStore = defineStore("bookingStore", {
         id: this.generateId(),
         status: "upcoming",
         performedAction: "",
+
+        // Sätter description automatiskt så vi uppfyller kravet "what will happen"
+        description: this.getServiceDescription(newBooking.serviceType),
       };
 
       this.bookings.push(bookingToAdd);
@@ -75,7 +109,17 @@ export const useBookingStore = defineStore("bookingStore", {
     updateBooking(updatedBooking) {
       const index = this.bookings.findIndex((b) => b.id === updatedBooking.id);
       if (index !== -1) {
-        this.bookings[index] = { ...updatedBooking };
+        // Om någon bokning saknar description, sätt den baserat på serviceType
+        // (t.ex. om man redigerar gammal data)
+        const fixedBooking = {
+          ...updatedBooking,
+          description:
+            updatedBooking.description && updatedBooking.description.trim() !== ""
+              ? updatedBooking.description
+              : this.getServiceDescription(updatedBooking.serviceType),
+        };
+
+        this.bookings[index] = fixedBooking;
 
         this.message = "Booking updated (simulated).";
         alert(this.message);

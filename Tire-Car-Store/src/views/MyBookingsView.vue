@@ -35,6 +35,7 @@ const editBooking = ref({
   time: "",
   status: "",
   performedAction: "",
+  description: "", // beskrivning av vad som ska göras (what will happen)
 });
 
 // Samma service-typer som på bokningssidan
@@ -101,7 +102,9 @@ const cancelledBookings = computed(() =>
 // Hämtar detaljerna för vald bokning (från store)
 const selectedBooking = computed(() => {
   if (!selectedBookingId.value) return null;
-  return bookingStore.bookings.find((b) => b.id === selectedBookingId.value) || null;
+  return (
+    bookingStore.bookings.find((b) => b.id === selectedBookingId.value) || null
+  );
 });
 
 // Öppnar detaljpanelen för en bokning
@@ -241,12 +244,15 @@ function clearFilters() {
     <div class="lists">
       <div class="listBox card">
         <h2>Upcoming</h2>
-        <p v-if="upcomingBookings.length === 0" class="small">No upcoming bookings.</p>
+        <p v-if="upcomingBookings.length === 0" class="small">
+          No upcoming bookings.
+        </p>
         <ul v-else>
           <li v-for="b in upcomingBookings" :key="b.id">
             <!-- Klickbar rad så man kan öppna detaljer -->
             <button class="linkBtn" @click="openDetails(b.id)">
-              {{ b.id }} - {{ b.date }} {{ b.time }} - {{ b.regNr }} - {{ b.serviceType }}
+              {{ b.id }} - {{ b.date }} {{ b.time }} - {{ b.regNr }} -
+              {{ b.serviceType }}
               <span class="badge" :class="b.status">{{ b.status }}</span>
             </button>
           </li>
@@ -255,11 +261,14 @@ function clearFilters() {
 
       <div class="listBox card">
         <h2>Ongoing</h2>
-        <p v-if="ongoingBookings.length === 0" class="small">No ongoing bookings.</p>
+        <p v-if="ongoingBookings.length === 0" class="small">
+          No ongoing bookings.
+        </p>
         <ul v-else>
           <li v-for="b in ongoingBookings" :key="b.id">
             <button class="linkBtn" @click="openDetails(b.id)">
-              {{ b.id }} - {{ b.date }} {{ b.time }} - {{ b.regNr }} - {{ b.serviceType }}
+              {{ b.id }} - {{ b.date }} {{ b.time }} - {{ b.regNr }} -
+              {{ b.serviceType }}
               <span class="badge" :class="b.status">{{ b.status }}</span>
             </button>
           </li>
@@ -268,11 +277,14 @@ function clearFilters() {
 
       <div class="listBox card">
         <h2>Completed (History)</h2>
-        <p v-if="completedBookings.length === 0" class="small">No completed bookings.</p>
+        <p v-if="completedBookings.length === 0" class="small">
+          No completed bookings.
+        </p>
         <ul v-else>
           <li v-for="b in completedBookings" :key="b.id">
             <button class="linkBtn" @click="openDetails(b.id)">
-              {{ b.id }} - {{ b.date }} {{ b.time }} - {{ b.regNr }} - {{ b.serviceType }}
+              {{ b.id }} - {{ b.date }} {{ b.time }} - {{ b.regNr }} -
+              {{ b.serviceType }}
               <span class="badge" :class="b.status">{{ b.status }}</span>
             </button>
           </li>
@@ -281,11 +293,14 @@ function clearFilters() {
 
       <div class="listBox card">
         <h2>Cancelled</h2>
-        <p v-if="cancelledBookings.length === 0" class="small">No cancelled bookings.</p>
+        <p v-if="cancelledBookings.length === 0" class="small">
+          No cancelled bookings.
+        </p>
         <ul v-else>
           <li v-for="b in cancelledBookings" :key="b.id">
             <button class="linkBtn" @click="openDetails(b.id)">
-              {{ b.id }} - {{ b.date }} {{ b.time }} - {{ b.regNr }} - {{ b.serviceType }}
+              {{ b.id }} - {{ b.date }} {{ b.time }} - {{ b.regNr }} -
+              {{ b.serviceType }}
               <span class="badge" :class="b.status">{{ b.status }}</span>
             </button>
           </li>
@@ -305,11 +320,20 @@ function clearFilters() {
         <p><strong>Phone:</strong> {{ selectedBooking.phone }}</p>
         <p><strong>RegNr:</strong> {{ selectedBooking.regNr }}</p>
         <p><strong>Service:</strong> {{ selectedBooking.serviceType }}</p>
-        <p><strong>Date/Time:</strong> {{ selectedBooking.date }} {{ selectedBooking.time }}</p>
+
+        <!-- Beskrivning av vad som ska göras (kravet "what will happen") -->
+        <p><strong>Description:</strong> {{ selectedBooking.description }}</p>
+
+        <p>
+          <strong>Date/Time:</strong> {{ selectedBooking.date }}
+          {{ selectedBooking.time }}
+        </p>
         <p>
           <strong>Status:</strong>
           {{ selectedBooking.status }}
-          <span class="badge" :class="selectedBooking.status">{{ selectedBooking.status }}</span>
+          <span class="badge" :class="selectedBooking.status">{{
+            selectedBooking.status
+          }}</span>
         </p>
 
         <!-- Extra info om bokningen är klar -->
@@ -319,7 +343,11 @@ function clearFilters() {
 
         <!-- Knappar för att hantera bokningen -->
         <div class="actions">
-          <button class="btn" @click="startEdit" :disabled="selectedBooking.status === 'completed'">
+          <button
+            class="btn"
+            @click="startEdit"
+            :disabled="selectedBooking.status === 'completed'"
+          >
             Edit
           </button>
 
@@ -338,7 +366,10 @@ function clearFilters() {
           <button
             class="btn"
             @click="completeBooking(selectedBooking.id)"
-            :disabled="selectedBooking.status === 'completed' || selectedBooking.status === 'cancelled'"
+            :disabled="
+              selectedBooking.status === 'completed' ||
+              selectedBooking.status === 'cancelled'
+            "
           >
             Mark completed
           </button>
@@ -348,6 +379,11 @@ function clearFilters() {
       <!-- Edit-läge (här kan man ändra bokningen) -->
       <div v-else>
         <p class="small">(Editing booking {{ editBooking.id }})</p>
+
+        <!-- Visar description även i edit-läge (read-only) så man ser "what will happen" -->
+        <p class="small">
+          <strong>Description:</strong> {{ editBooking.description }}
+        </p>
 
         <div class="form">
           <div class="field">
@@ -373,7 +409,9 @@ function clearFilters() {
           <div class="field">
             <label>Service type</label>
             <select v-model="editBooking.serviceType">
-              <option v-for="s in serviceTypes" :key="s" :value="s">{{ s }}</option>
+              <option v-for="s in serviceTypes" :key="s" :value="s">
+                {{ s }}
+              </option>
             </select>
           </div>
 

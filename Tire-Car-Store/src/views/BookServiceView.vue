@@ -46,7 +46,10 @@ const timeSlots = [
 // Bokningar för valt datum
 // computed används så att listan uppdateras automatiskt när selectedDate ändras
 const bookingsForSelectedDate = computed(() => {
+  // Om inget datum är valt så finns det inga bokningar att visa
   if (!selectedDate.value) return [];
+
+  // Hämtar alla bokningar som matchar datumet (och räknar inte avbokade)
   return bookingStore.bookings.filter(
     (b) => b.date === selectedDate.value && b.status !== "cancelled" // jag visar inte avbokade tider
   );
@@ -54,11 +57,13 @@ const bookingsForSelectedDate = computed(() => {
 
 // Tider som redan är upptagna för valt datum
 const occupiedTimes = computed(() => {
+  // Plockar bara ut tiderna, t.ex. ["10:00", "13:00"]
   return bookingsForSelectedDate.value.map((b) => b.time);
 });
 
 // Tider som är lediga (tar bort de tider som redan är bokade)
 const availableTimes = computed(() => {
+  // Jämför listan med alla tider mot de upptagna tiderna
   return timeSlots.filter((t) => !occupiedTimes.value.includes(t));
 });
 
@@ -90,6 +95,7 @@ function submitBooking() {
   }
 
   // Bygger upp ett bokningsobjekt med användarens data
+  // OBS: "description" (what will happen) sätts automatiskt i store baserat på serviceType
   const newBooking = {
     name: name.value.trim(),
     email: email.value.trim(),
@@ -163,6 +169,8 @@ function submitBooking() {
         <!-- Tidval är disabled tills man har valt ett datum -->
         <select v-model="selectedTime" :disabled="!selectedDate">
           <option value="" disabled>Select a time</option>
+
+          <!-- Här visar jag bara tider som är lediga -->
           <option v-for="t in availableTimes" :key="t" :value="t">
             {{ t }}
           </option>
