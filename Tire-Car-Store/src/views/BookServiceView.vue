@@ -1,10 +1,4 @@
 <script setup>
-/*
-  BookServiceView.vue
-  This page contains the booking form.
-  Requirement: user must be able to book a service with name, email, phone, regNr, date and time,
-  and choose service type. Also show available vs occupied times.
-*/
 
 import { ref, computed } from "vue";
 import { useBookingStore } from "../stores/bookingStore";
@@ -21,7 +15,7 @@ const serviceType = ref("Oil change"); // default value
 const selectedDate = ref(""); // YYYY-MM-DD from <input type="date">
 const selectedTime = ref(""); // from select dropdown
 
-// Service types required in the assignment (examples)
+// Service types required in the assignment 
 const serviceTypes = [
   "Oil change",
   "Brake adjustment",
@@ -29,7 +23,7 @@ const serviceTypes = [
   "Tire change",
 ];
 
-// Simple time slots (student-friendly)
+// Simple time slots 
 const timeSlots = [
   "09:00",
   "10:00",
@@ -47,7 +41,7 @@ const bookingsForSelectedDate = computed(() => {
   return bookingStore.bookings.filter((b) => b.date === selectedDate.value);
 });
 
-// Occupied times on that date (ignore cancelled to make times free again)
+// Occupied times on that date (we ignore cancelled to make times free again)
 const occupiedTimes = computed(() => {
   return bookingsForSelectedDate.value
     .filter((b) => b.status !== "cancelled")
@@ -59,7 +53,7 @@ const availableTimes = computed(() => {
   return timeSlots.filter((t) => !occupiedTimes.value.includes(t));
 });
 
-// Simple validation (keep it basic)
+// Simple validation 
 function isFormValid() {
   return (
     name.value.trim() !== "" &&
@@ -79,7 +73,7 @@ function submitBooking() {
     return;
   }
 
-  // Create a booking object (store will add id/status/performedAction)
+  // Create a booking object 
   const newBooking = {
     name: name.value.trim(),
     email: email.value.trim(),
@@ -90,10 +84,10 @@ function submitBooking() {
     time: selectedTime.value,
   };
 
-  // Add booking to store (save is simulated with alert inside the store)
+  // Add booking to store 
   bookingStore.addBooking(newBooking);
 
-  // Reset form (student-like)
+  // Reset form 
   name.value = "";
   email.value = "";
   phone.value = "";
@@ -140,7 +134,7 @@ function submitBooking() {
 
       <div class="field">
         <label>Date</label>
-        <!-- This counts as a simple "calendar" selection -->
+      
         <input v-model="selectedDate" type="date" />
       </div>
 
@@ -149,7 +143,7 @@ function submitBooking() {
         <select v-model="selectedTime" :disabled="!selectedDate">
           <option value="" disabled>Select a time</option>
 
-          <!-- Only show available times in the dropdown -->
+          <!-- we Only show available times in the dropdown -->
           <option v-for="t in availableTimes" :key="t" :value="t">
             {{ t }}
           </option>
@@ -187,7 +181,7 @@ function submitBooking() {
 </template>
 
 <style scoped>
-/* Simple student-like styling */
+
 .form {
   max-width: 520px;
   border: 1px solid #ddd;
