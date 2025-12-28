@@ -41,14 +41,14 @@ const bookingsForSelectedDate = computed(() => {
   return bookingStore.bookings.filter((b) => b.date === selectedDate.value);
 });
 
-// Occupied times on that date (we ignore cancelled to make times free again)
+// Occupied times on that date (ignore cancelled so cancelled slots become free)
 const occupiedTimes = computed(() => {
   return bookingsForSelectedDate.value
     .filter((b) => b.status !== "cancelled")
     .map((b) => b.time);
 });
 
-// Available times = all slots minus occupied
+// Available times = all slots minus occupied times
 const availableTimes = computed(() => {
   return timeSlots.filter((t) => !occupiedTimes.value.includes(t));
 });
@@ -73,7 +73,13 @@ function submitBooking() {
     return;
   }
 
-  // Create a booking object 
+  // Prevent double-booking: stop if the selected date+time is taken
+  if (bookingStore.isSlotTaken(selectedDate.value, selectedTime.value)) {
+    alert("That time is already booked. Please choose another time.");
+    return;
+  }
+
+  // Create a booking object (store will add id/status/performedAction)
   const newBooking = {
     name: name.value.trim(),
     email: email.value.trim(),
@@ -134,7 +140,7 @@ function submitBooking() {
 
       <div class="field">
         <label>Date</label>
-      
+   
         <input v-model="selectedDate" type="date" />
       </div>
 
@@ -143,7 +149,7 @@ function submitBooking() {
         <select v-model="selectedTime" :disabled="!selectedDate">
           <option value="" disabled>Select a time</option>
 
-          <!-- we Only show available times in the dropdown -->
+          <!-- Only show available times in the dropdown -->
           <option v-for="t in availableTimes" :key="t" :value="t">
             {{ t }}
           </option>

@@ -125,6 +125,12 @@ function saveEdit() {
     return;
   }
 
+   // Prevent booking overlaps when editing (ignore current booking id)
+  if (bookingStore.isSlotTaken(editBooking.value.date, editBooking.value.time, editBooking.value.id)) {
+    alert("That time is already booked. Please choose another time.");
+    return;
+  }
+
   // Update booking
   bookingStore.updateBooking({
     ...editBooking.value,
